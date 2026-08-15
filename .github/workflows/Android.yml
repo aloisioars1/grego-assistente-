@@ -26,7 +26,7 @@ jobs:
       - name: Configurar Android SDK 36
         uses: android-actions/setup-android@v3
 
-      - name: Criar arquivos que o AI Studio esqueceu
+            - name: Criar arquivos que o AI Studio esqueceu
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           if [ -f ".env.example" ] && [ ! -f ".env" ]; then cp .env.example .env; fi
@@ -34,13 +34,15 @@ jobs:
             mkdir -p app
             echo '{"project_info":{"project_number":"123","project_id":"fake"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:fake","android_client_info":{"package_name":"com.aistudio.chistegreek.wlmq"}}}],"configuration_version":"1"}' > app/google-services.json
           fi
-          # Cria debug.keystore que estava faltando
+          # Cria debug.keystore - senha tem que ter 6+ chars
           if [ ! -f "debug.keystore" ]; then
+            rm -f debug.keystore
             keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Debug,O=Android,C=US" -noprompt
           fi
           if [ ! -f "my-upload-key.jks" ]; then
-            keytool -genkey -v -keystore my-upload-key.jks -alias upload -storepass dummy -keypass dummy -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Upload,O=Android,C=US" -noprompt
-          fi
+            keytool -genkey -v -keystore my-upload-key.jks -alias upload -storepass android123 -keypass android123 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Upload,O=Android,C=US" -noprompt
+          fi -f "debug.keystore" ]; then
+            
           ls -la *.keystore || true
           ls -la *.jks || true
 
