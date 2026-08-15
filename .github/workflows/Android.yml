@@ -3,8 +3,6 @@ name: Android CI
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -12,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ver estrutura do projeto
+        run: ls -la && echo "---" && find . -maxdepth 3 -name "gradlew" -type f
 
       - name: Configurar JDK 17
         uses: actions/setup-java@v4
@@ -24,13 +25,25 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Dar permissão ao gradlew
-        run: chmod +x ./gradlew
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            echo "GRADLEW_PATH=./gradlew" >> $GITHUB_ENV
+          elif [ -f "./android/gradlew" ]; then
+            chmod +x ./android/gradlew
+            echo "GRADLEW_PATH=./android/gradlew" >> $GITHUB_ENV
+          else
+            find . -name "gradlew" -exec chmod +x {} \;
+            echo "GRADLEW_PATH=$(find . -name gradlew | head -n 1)" >> $GITHUB_ENV
+          fi
 
       - name: Compilar APK Debug
-        run: ./gradlew assembleDebug
+        run: ${{ env.GRADLEW_PATH }} assembleDebug
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug.apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            **/build/outputs/apk/debug/*.apk
+            **/outputs/apk/debug/*.apk
