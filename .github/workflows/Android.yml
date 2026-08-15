@@ -1,4 +1,4 @@
-name: Android CI - AI Studio Fix
+name: Android CI - AI Studio Final
 
 on:
   push:
@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # evita quebrar o bloco release mesmo quando compila debug
+      STORE_PASSWORD: "dummy"
+      KEY_PASSWORD: "dummy"
+      KEYSTORE_PATH: "my-upload-key.jks"
     steps:
       - uses: actions/checkout@v4
 
@@ -18,20 +23,35 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Configurar Android SDK
+      - name: Configurar Android SDK 36
         uses: android-actions/setup-android@v3
 
-      # AI Studio não gera o gradlew, então a gente cria aqui
-      - name: Gerar Gradle Wrapper que o AI Studio esqueceu
+      - name: Criar arquivos que o AI Studio esqueceu
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          if [ -f ".env.example" ] && [ ! -f ".env" ]; then cp .env.example .env; fi
+          if [ ! -f "app/google-services.json" ]; then
+            mkdir -p app
+            echo '{"project_info":{"project_number":"123","project_id":"fake"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:fake","android_client_info":{"package_name":"com.aistudio.chistegreek.wlmq"}}}],"configuration_version":"1"}' > app/google-services.json
+          fi
+          # Cria debug.keystore que estava faltando
+          if [ ! -f "debug.keystore" ]; then
+            keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Debug,O=Android,C=US" -noprompt
+          fi
+          if [ ! -f "my-upload-key.jks" ]; then
+            keytool -genkey -v -keystore my-upload-key.jks -alias upload -storepass dummy -keypass dummy -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Upload,O=Android,C=US" -noprompt
+          fi
+          ls -la *.keystore || true
+          ls -la *.jks || true
+
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.7
 
-      - name: Criar wrapper se não existir
+      - name: Gerar wrapper se não existir
         run: |
-          if [ ! -f "./gradlew" ]; then
-            gradle wrapper --gradle-version 8.7
-          fi
+          if [ ! -f "./gradlew" ]; then gradle wrapper --gradle-version 8.7; fi
           chmod +x ./gradlew
 
       - name: Compilar APK Debug
@@ -40,5 +60,5 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-aistudio-debug
+          name: chiste-grego-debug
           path: app/build/outputs/apk/debug/*.apk
