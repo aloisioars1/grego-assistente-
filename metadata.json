@@ -1,0 +1,6 @@
+{
+  "name": "Chiste",
+  "description": "Greek language flashcards with gender color coding, text-to-speech pronunciation, and Lina AI tutor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
