@@ -1,4 +1,4 @@
-name: Android CI
+name: Android CI - AI Studio Fix
 
 on:
   push:
@@ -21,16 +21,24 @@ jobs:
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle (sem precisar de gradlew)
+      # AI Studio não gera o gradlew, então a gente cria aqui
+      - name: Gerar Gradle Wrapper que o AI Studio esqueceu
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.7
 
+      - name: Criar wrapper se não existir
+        run: |
+          if [ ! -f "./gradlew" ]; then
+            gradle wrapper --gradle-version 8.7
+          fi
+          chmod +x ./gradlew
+
       - name: Compilar APK Debug
-        run: gradle assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: app-aistudio-debug
           path: app/build/outputs/apk/debug/*.apk
