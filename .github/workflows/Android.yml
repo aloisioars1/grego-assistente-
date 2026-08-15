@@ -25,14 +25,42 @@ jobs:
       - name: Configurar Android SDK 36
         uses: android-actions/setup-android@v3
 
-      - name: Criar arquivos que o AI Studio esqueceu
+            - name: Criar arquivos que o AI Studio esqueceu
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           if [ -f ".env.example" ] && [ ! -f ".env" ]; then cp .env.example .env; fi
-          if [ ! -f "app/google-services.json" ]; then
-            mkdir -p app
-            echo '{"project_info":{"project_number":"123","project_id":"fake"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:fake","android_client_info":{"package_name":"com.aistudio.chistegreek.wlmq"}}}],"configuration_version":"1"}' > app/google-services.json
-          fi
+          mkdir -p app
+          cat > app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "1234567890",
+              "project_id": "chiste-grego-fake",
+              "storage_bucket": "chiste-grego-fake.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:abc123",
+                  "android_client_info": {
+                    "package_name": "com.aistudio.chistegreek.wlmq"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyFakeKeyForCIBuild1234567890ABC"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
           if [ ! -f "debug.keystore" ]; then
             keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Debug,O=Android,C=US" -noprompt
           fi
