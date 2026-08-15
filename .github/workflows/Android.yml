@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configurar JDK 17
+      - name: Configurar JDK 21 (AGP 9.1.1 precisa)
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: gradle
 
@@ -34,23 +34,23 @@ jobs:
             echo '{"project_info":{"project_number":"123","project_id":"fake"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:fake","android_client_info":{"package_name":"com.aistudio.chistegreek.wlmq"}}}],"configuration_version":"1"}' > app/google-services.json
           fi
           if [ ! -f "debug.keystore" ]; then
-            rm -f debug.keystore
             keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Debug,O=Android,C=US" -noprompt
           fi
           if [ ! -f "my-upload-key.jks" ]; then
             keytool -genkey -v -keystore my-upload-key.jks -alias upload -storepass android123 -keypass android123 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Upload,O=Android,C=US" -noprompt
           fi
-          ls -la *.keystore *.jks || true
 
-      - name: Setup Gradle
+      - name: Setup Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.7
+          gradle-version: 9.3.1
 
-      - name: Gerar wrapper se não existir
+      - name: Forçar wrapper para 9.3.1
         run: |
-          if [ ! -f "./gradlew" ]; then gradle wrapper --gradle-version 8.7; fi
+          if [ ! -f "./gradlew" ]; then gradle wrapper --gradle-version 9.3.1; fi
+          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-9.3.1-bin.zip|' gradle/wrapper/gradle-wrapper.properties
           chmod +x ./gradlew
+          cat gradle/wrapper/gradle-wrapper.properties
 
       - name: Compilar APK Debug
         run: ./gradlew assembleDebug --stacktrace
